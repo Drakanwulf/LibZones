@@ -1,2 +1,2 @@
 # LibZones
-Zone tables library add-on for the QuestMap 2 project.
+A standalone library add-on to create and maintain Zones tables for the QuestMap2 project.
