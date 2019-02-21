@@ -1,2 +1,2 @@
 # LibZones
-LibZones is a standalone, library add-on to create and/or update ESO Zones information tables.
+Zone tables library add-on for the QuestMap 2 project.
