@@ -1,15 +1,15 @@
 # ZoneTables
 ZoneTables is a standalone support add-on that is used to dynamically create and/or update information, reference, and/or 
-cross-reference tables for each and every one of the Zones and Subzones in the game world. Because it is a support add-on, it has 
+cross-reference tables for each and every one of the Zone and Subzone maps in the game world. Because it is a support add-on, it has 
 been designed for use by developers rather than users.
 
-ZoneTables supports information, reference, and cross-reference tables for both Zones and Subzones. The only difference between 
+ZoneTables supports information, reference, and cross-reference tables for both Zone and Subzone maps. The only difference between 
 Zones and Subzones is that multiple Subzones can be nested within a Zone just as multiple Zones can be nested within a world Map 
 (See the description and layout of the ZoneTree tables).
 
 I mention this so you understand that anytime this wiki refers to a Zone, it can mean a Subzone as well. For example, while Zone 
 Index values and Zone Identifier values are different for Zones and Subzones, their indexes and identifiers operate in exactly the 
-same manner for Subzones as they do for Zones.
+same manner for Zones as they do for Subzones.
 
 WARNING: You must be running ESO game code for the Wrathstone API (100026), or greater, for this add-on to function correctly.
 ## What It Is
@@ -20,7 +20,7 @@ coded Zone and Subzone tables are such a time-consuming pain to maintain.
 
 To get around this problem, the game developers designed additional Zone and Subzone tables whose ordinal table positions are 
 static values and named these indexes "Zone Identifiers"; however, identifiers are not the same as, and do not interchange well 
-with, Zone Indexes because identifiers differ from indexes in values, usage and purpose. Recently, the game developers provided 
+with, Zone Indexes because identifiers differ from indexes in value, usage and purpose. Recently, the game developers provided 
 sufficient information in the game API return values to make implementation of this add-on feasible.
 
 ZoneTables uses game API functions to create and maintain sets of Zone and Subzone information, reference and cross-reference 
@@ -33,15 +33,15 @@ ZoneTables creates information, reference, and cross-reference tables for its Zo
 
 Otherwise, ZoneTables retrieves the most current reference tables from its saved variables file and then scans and updates these reference table entries for missing tables and/or table entries and automatically reloads those tables and/or entries.
 
-"Standalone" means that ZoneTables should not be embedded. Please load only one instance of ZoneTables from your ".../Addons/" directory and append a "##DependsOn: ZoneTables" directive in your add-on's manifest file to instruct the game to verify that a ZoneTables process exists and is running before the game loads your add-on.
+"Standalone" means that a ZoneTables folder should not be embedded within your add-on. Please load only one instance of ZoneTables from your ".../Addons/" directory and append a "##DependsOn: ZoneTables" directive in your add-on's manifest file to instruct the game to verify that a ZoneTables process exists and is running before the game loads your add-on.
 
 Do NOT embed a ZoneTables folder within your add-on!
 ## What It Does
-ZoneTables uses Map Indexes and Map Identifiers to access its reference tables just like the game does. In fact, most if not all of the ZoneTables indexes and identifiers use the same values the game does. The difference is that ZoneTables creates several index to identifier and identifier to index cross-reference tables that are not visible to the add-on developer in the game's version 100026 API functions.
-* A Map Index is the ordinal position of an entry in a Maps reference or cross-reference table. Index values may change whenever the game's APIVersion changes. Indexes are often used to access specific maps when the game needs to place objects, markers, icons, and/or subdivisions (i.e. zones, subzones, etc.) at x,y location coordinates. "mapIndex" is the variable name ZoneTables uses most often and the name is often shortened to "inx" or "mdx".
-* A Map Identifier is the ordinal position of an entry in a Maps reference or cross-reference table. Identifier values do not change whenever the game's APIVersion changes. Identifiers are often used to access map content like textures, icons, widgets, or .dds files to enable the graphics engine to "draw" them on your monitor (See [Texture List](https://wiki.esoui.com/Texture_List) in the ESOUI wiki). "mapId" is the variable name ZoneTables uses most often and the name is often shortened to "id" or "mid".
+ZoneTables uses Zone or Subzone Indexes and Zone or Subzone Identifiers to access its reference tables just like the game does. In fact, most if not all of the ZoneTables indexes and identifiers use the same values that the game does. The differences are that ZoneTables creates several ????? tables that are not visible to the add-on developer in the game's version 100026 API functions.
+* A Zone or Subzone Index is the ordinal position of an entry in a Zone or Subzone information, reference, or cross-reference table. Index values may change whenever the game's APIVersion changes. Indexes are often used to access specific Zone or Subzone maps when the game needs to place objects, markers, icons, and/or subdivisions (i.e. zones, subzones, etc.) at x,y location coordinates. "zoneIndex" is the variable name ZoneTables uses most often and the name is often shortened to "inx" or "zdx".
+* A Zone or Subzone Identifier is the ordinal position of an entry in a Zone or Subzone information, reference, or cross-reference table. Identifier values do not change whenever the game's APIVersion changes. Identifiers are often used to access specific Zone or Subzone maps when the game needs to define content like textures, icons, widgets, or .dds files to enable the graphics engine to "draw" them on your monitor (See [Texture List](https://wiki.esoui.com/Texture_List) in the ESOUI wiki). "zoneId" is the variable name ZoneTables uses most often and the name is often shortened to "id" or "zid".
 
-Although Map Indexes and Map Identifiers may appear to be interchangeable, they are not because their values, purpose and usage differ and because they reference different tables for different reasons; however, what indexes and identifiers have in common, for example, is where the Map Index (1) for the Tamriel map refers to map data points, the Map Identifer (27) for the Tamriel map refers to the textures, icons, and .dds files for the Tamriel map. Think of it this way: identifiers reference tables that tell the game "what to draw"; indexes reference tables that tell the game "where to draw" them.
+Although Zone Indexes and Zone Identifiers may appear to be interchangeable, they are not because their value, purpose and usage differ and because they reference different tables for different reasons; however, what indexes and identifiers have in common, for example, is where the Zone Index (?) for the Tamriel zone refers to map data points, the Zone Identifer (??) for the Tamriel zone refers to the textures, icons, and .dds files for the Tamriel map. Think of it this way: identifiers reference tables that tell the game "what to draw"; indexes reference tables that tell the game "where to draw" them.
 
 ZoneTables determines when to create its reference tables or when to update an existing set of reference tables based on these criteria; if a Saved Variables file (i.e. .../SavedVariables/LibMaps.lua) exists that contains ZoneTables reference and/or cross-reference tables information for this NA, EU, or PTS megaserver, then the tables in that Saved Variables file will be used unless...
 1. The value returned from the GetAPIVersion() API function is not equal to the APIVersion value in the Saved Variables file; then, ZoneTables will create a new set of reference and/or cross-reference tables for every Map index the game returns to it.
