@@ -1,2 +1,2 @@
-# LibZones
-A standalone library add-on to create and maintain Zones tables for the QuestMap2 project.
+# ZoneTables
+A standalone support add-on to create and maintain Zone and Subzone tables for the QuestMap2 project.
