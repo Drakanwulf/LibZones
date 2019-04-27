@@ -1,10 +1,11 @@
 ﻿## Title: ZoneTables
-## Description: A standalone support add-on to create and maintain Zone and SubZone reference and cross-reference tables.
+## Description: A standalone support add-on to create and maintain Zone and SubZone information, reference and cross-reference tables.
 ## Version: 1.0.0
 ## AddOnVersion: 100
 ## APIVersion: 100026 100027
-## DependsOn: AddonStub LibGPS2
+## DependsOn: AddonStub LibGPS
 ## SavedVariables: EU_SavedVars NA_SavedVars PTS_SavedVars
+## IsLibrary: true
 ## Contributors: Votan, sirinsidiator, silvereyes, baertram, slippycheese, manavortex, solinur, kyoma, and many more.
 ## Author: Drakanwulf & Hawkeye1889
 
