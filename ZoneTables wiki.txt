@@ -1,196 +1,215 @@
 # ZoneTables
-ZoneTables is a standalone support add-on that is used to dynamically create and/or update information, reference, and/or 
-cross-reference tables for each and every one of the Zone and Subzone maps in the game world. Because it is a support add-on, it has 
-been designed for use by developers rather than users.
+ZoneTables is a standalone support add-on that dynamically creates or updates information, reference, cross-reference, and hierarchy tables for each and every one of the Zones in the game and for every Point Of Interest (POI) location nested within a Zone. Because it is a support add-on, it has been designed for use by developers rather than by users. 
 
-ZoneTables supports information, reference, and cross-reference tables for both Zone and Subzone maps. The only difference between 
-Zones and Subzones is that multiple Subzones can be nested within a Zone just as multiple Zones can be nested within a world Map 
-(See the description and layout of the ZoneTree tables).
+## Overview
+If you do not know how the game maps location points and areas, then you may wish to read this section to gain a better understanding of what the game's API mapping functions do and how they interact with the mapping support add-ons (i.e. LibGPS2, MapTables, ZoneTables, and QuestTables) as of the Elsweyr release (100027).
 
-I mention this so you understand that anytime this wiki refers to a Zone, it can mean a Subzone as well. For example, while Zone 
-Index values and Zone Identifier values are different for Zones and Subzones, their indexes and identifiers operate in exactly the 
-same manner for Zones as they do for Subzones.
+The three entities in the game's mapping hierarchy are:
+* Maps
+* Zones
+* Points of Interest (POIs)
+Each of these three entities is segregated and categorized by type. In addition, POIs are further qualified by their respective "pin-type". Pin-types are of particular interest to the QuestTables API functions.
 
-WARNING: You must be running ESO game code for the Wrathstone API (100026), or greater, for this add-on to function correctly.
-## What It Is
-Because the game does not guarantee that the ordinal table positions of Zone or Subzone table entries accessed by a "Zone Index" 
-are static, the Zone or Subzone table entry that a Zone Index points to in this version may not be the same Zone or Subzone table 
-entry that it pointed to in the previous version or that it will point to in the next version. This is the primary reason why hard 
-coded Zone and Subzone tables are such a time-consuming pain to maintain.
+Basically, ZOS has mapped our game world into a layered hierarchy of location points and areas but it is also a hierarchy that has evolved and changed as the game has matured. SubZones, for example, do not exist anymore; SubZones have been replaced in the hierarchy by Parent and Child Zones. Thus, you may find that some Child Zones contain three copies of the same POIs because these children have replaced what were once three Alliance specific SubZones. The game's mapping hierarchy is described in the next sections.
 
-To get around this problem, the game developers designed additional Zone and Subzone tables whose ordinal table positions are 
-static values and named these indexes "Zone Identifiers"; however, identifiers are not the same as, and do not interchange well 
-with, Zone Indexes because identifiers differ from indexes in value, usage and purpose. Recently, the game developers provided 
-sufficient information in the game API return values to make implementation of this add-on feasible.
+### The Map Layer
+Is the highest level in the hierarchy. When the game was first released, there was but one rootmap (i.e. World Map) and its name was "Tamriel". The Tamriel map was, and remains, mapIndex #1 because it contains all but four of the other (currently 35) Map Layer maps nested within it.
+
+Now, however, there are four rootmaps. These four rootmaps are all located on or within the World Map that looks like a circular ring and whose name is "The Aurbis" (mapIndex #24). One could say that, since Tamriel is located within The Aurbis map, that The Aurbis map has replaced the Tamriel map as the only World Map that contains every other Map, Zone, or Point Of Interest (POI) within itself.
+
+So, today, if you were to diagram the Map Layer, it would consist of: The Aurbis Map (the World Map) which contains: the Artaeum Map (a rootmap), the Clockwork City Map (a rootmap), the Cold Harbour Map (a rootmap), and the Tamriel Map (a rootmap) which contains the 31 remaining Map Layer Maps as its children.
+
+* World Map: "The Aurbis", mapIndex #24, the current World Map.
+	Does not have an equivalent Parent Zone.
+	Is located at coordinates: X = 0, Y = 0.
+	** Root Maps:
+		Currently, there are four root maps. They are: Artaeum, Clockwork City, Cold Harbour, and Tamriel.
+		The Artaeum, Clockwork City, and Cold Harbour root maps have equivalent Parent Zones; Tamriel does not.
+		*** Tamriel root map: mapIndex #1, the first World Map.
+			Does not have an equivalent Parent Zone.
+			Is located at coordinates: X = 0, Y = 0 (which is wrong because Tamriel is the furthest East of all the root maps).
+			Contains (Child) Maps nested within it because it was the first World Map.
+			The Maps nested within the Tamriel root map have equivalent Parent Zones. This anomaly lets the game substitute Zone hierarchy for the Tamriel Maps hierarchy.
+			As of Elsweyr, there are no game API functions to retrieve this hierarchy visible to the add-on developer.
+	
+Because the Tamriel root map used to be a World Map and because the The Aurbis map is the current World Map, the game treats these two Maps differently than it does the remaining (34) maps in this layer. For example, top left corner of both maps is located at coordinates 0,0 and neither of these two maps has an associated Parent Zone.
+### The Zone Layer
+Zone maps are divided into two categories: Parents and their Children. The only difference between a Parent Zone and a Child Zone is that multiple Child Zones can be nested within a Parent Zone just as multiple Maps have been nested within the Tamriel Map, the map that used to be the only World Map.
+
+I suspect, but have not yet proven, that further investigation is going to show there are but 34 Parent zones which correspond, one Map for one Zone, to their twin siblings in the Map layer while the remaining 700+ Zone maps are found nested within, and distributed among, their respective Parent Zones in this layer.
+
+The wrinkle in the Zone Layer is that both Parent and Child Zones may, or may not, have no or several Point Of Interest (POI) locations attached to them within their own POI tables. The game provides API functions to retrieve the POI information from the game's tables by using a zoneIndex along with a poiIndex. Unfortunately, the Parent/Child relationship information is retrieved from the game's tables by using zoneIdentifiers (zoneIds) for both categories. Luckily for us, the game provides API functions to convert Zone Indexes to Identifers and Zone Identifers to Indexes.
+
+* World Map: "The Aurbis", mapIndex #24, the current World Map.
+	Does not have an equivalent Parent Zone.
+	** Root Maps:
+		Currently, there are four root maps. They are: Artaeum, Clockwork City, Cold Harbour, and Tamriel.
+		*** Tamriel root map: mapIndex #1, the first World Map.
+			Does not have an equivalent Parent Zone.
+			Contains (Child) Maps nested within it because it was the first World Map.
+			As of Elsweyr, there are no game API functions to retrieve this hierarchy visible to the add-on developer.
+	** Parent Zones: are retrieved by zoneIdentifiers; not zoneIndexes. May contain a list of POI entries.
+		The Artaeum, Clockwork City, and Cold Harbour root maps have equivalent Parent Zones; Tamriel does not.
+		The Maps nested within the Tamriel root map have equivalent Parent Zones. This anomaly substitutes Zone hierarchy for the Map hierarchy of the Tamriel root map.
+		*** Child Zones: are retrieved by zoneIdentifiers; not zoneIndexes. May contain a list of POI entries. 
+			Groups Child Zones beneath their Parent Zone.
+			As of Elsweyr, there are no game API functions to retrieve this hierarchy visible to the add-on developer.
+	** Points Of Interest (POIs): may exist for Parent or Child Zones; POIs do not exist for Maps.
+		Categorized by POI-type and pin-type.
+	
+### The POI Layer
+The POI Layer is where all the fun stuff like dungeons, towns, keeps, farms, and mines are located. POI locations are also where the game's quest givers are sited. The distinguishing features of a POI table entry are: local (i.e. normalized) location (XY) coordinates; POI typing so you can tell a dungeon from an achievement, a house or a wayshrine; pin typing to further clarify the content of a POI entry.
+
+I do not have sufficient information as of now to go into more detail about this layer at this time, but I am working on it.
+### The Hierarchy Trees
+The game has establised hierarchy relationships among Maps, Zones, and Points Of Interest to provide us with the information we use to traverse and play the game areas. The game provides us with API functions to expose the hierarchy relationships that we can use to develop our own add-ons.
+
+* Maps are related to Zones by Map Indexes and Zone Identifiers. Remember, indexes can change but identifiers are static so they don't change (very often, if ever). There are other relationships but they are the results of an add-on developer making these relationships visible to their brother and sister developers.
+
+
+
+
+## What It Is:
+ZoneTables provides information, reference, and cross-reference tables for both Parent and Child Zones. The only difference between a Parent Zone and a Child Zone is that multiple Child Zones can be nested within a Parent Zone just as multiple Parent Zones can be nested within a Map (e.g. Tamriel).
+
+A Parent Zone remains the highest level Zone within a Map; however, a Child Zone includes what used to be referred to as Subzones. This difference is important because it affects how Zone Indexes and Zone Identifiers interact within game API functions to retrieve zone information from their respective information tables. I believe you will find that the the game provides more data retrieval API functions for Zones than it does for Maps, considerably more.
+
+I mention this so you will understand that anytime this wiki refers to a Zone, it can mean either a Parent or a Child Zone. For example, while Zone Index values and Zone Identifier values are different for Parents and their Children, their indexes and identifiers operate in exactly the same manner for Child Zones as they do for their Parent Zones.
+
+"Standalone" means that ZoneTables should not be embedded. Please load only one instance of ZoneTables from your ".../Addons/" directory and append a "##DependsOn: ZoneTables" directive in your add-on's manifest file to instruct the game to verify that a ZoneTables process exists and is running before the game loads your add-on.
+
+WARNING: You must be running ESO game code for the Elsweyr API (100027), or greater, for this add-on to function correctly.
+## What It Does:
+Because the game does not guarantee that the ordinal table positions of Zone table entries accessed by a "Zone Index" are static, the Zone or Subzone table entry that a Zone Index points to in this version may not be the same Zone or Subzone table entry that it pointed to in the previous version or that it will point to in the next version. This is the primary reason why hardcoded Zone and Subzone tables are such a time-consuming pain to maintain.
+
+To get around this problem, the game developers designed additional Zone tables whose ordinal table positions are static values and named these indexes "Zone Identifiers"; however, identifiers are not the same as, and do not interchange well with, Zone Indexes because identifiers differ from indexes in values, usage and purpose. Recently, however, the game developers provided sufficient information in the return values from the game API functions to make implementation of this add-on feasible.
 
 ZoneTables uses game API functions to create and maintain sets of Zone and Subzone information, reference and cross-reference 
-tables; thus, it eliminates the tedious and time-consuming manual updates required by hard coded Zone and Subzone tables. 
-ZoneTables creates information, reference, and cross-reference tables for its Zone and Subzone maps dynamically every time:
+tables; thus, it eliminates the tedious and time-consuming manual updates required by hardcoded Zone and POI tables. 
+ZoneTables creates information, reference, and cross-reference tables for its Zone and POI maps dynamically every time:
 * the game changes its APIVersion number
 * ZoneTables changes its AddOnVersion number
 * ZoneTables detects missing or empty Maps tables
 * the game adds new or deletes old maps
 
-Otherwise, ZoneTables retrieves the most current reference tables from its saved variables file and then scans and updates these reference table entries for missing tables and/or table entries and automatically reloads those tables and/or entries.
+ZoneTables uses Zone Indexes and Zone Identifiers to access its reference tables just like the game does. In fact, most if not all of the ZoneTables indexes and identifiers use the same values the game does. The difference is that ZoneTables creates several index to identifier and identifier to index cross-reference tables that are not visible to the add-on developer in the game's version 100027 API functions.
+* A Zone Index is the ordinal position of an entry in a Maps reference or cross-reference table. Index values may change whenever the game's APIVersion changes. Indexes are often used to access specific maps when the game needs to place objects, markers, icons, and/or subdivisions (i.e. zones, POIs, etc.) at x,y location coordinates. "zoneIndex" is the variable name ZoneTables uses most often and the name is often shortened to "inx" or "zdx".
+* A Zone Identifier is the ordinal position of an entry in a Maps reference or cross-reference table. Identifier values do not change whenever the game's APIVersion changes. Identifiers are often used to access Zone content like textures, icons, widgets, or .dds files to enable the graphics engine to "draw" them on your monitor (See [Texture List](https://wiki.esoui.com/Texture_List) in the ESOUI wiki). "zoneId" is the variable name ZoneTables uses most often and the name is often shortened to "id" or "zid".
 
-"Standalone" means that a ZoneTables folder should not be embedded within your add-on. Please load only one instance of ZoneTables from your ".../Addons/" directory and append a "##DependsOn: ZoneTables" directive in your add-on's manifest file to instruct the game to verify that a ZoneTables process exists and is running before the game loads your add-on.
+Although Zone Indexes and Zone Identifiers may appear to be interchangeable, they are not because their values, purpose and usage differ and because they reference different tables for different reasons; however, what indexes and identifiers have in common, for example, is where the Zone Index for the Tamriel Zone (1) refers to Zone data points, the Zone Identifer for the Tamriel Zone (27) refers to the textures, icons, and .dds files for Zone data objects. Think of it this way: identifiers reference tables that tell the game "what to draw"; indexes reference tables that tell the game "where to draw" them.
 
-Do NOT embed a ZoneTables folder within your add-on!
-## What It Does
-ZoneTables uses Zone or Subzone Indexes and Zone or Subzone Identifiers to access its reference tables just like the game does. In fact, most if not all of the ZoneTables indexes and identifiers use the same values that the game does. The differences are that ZoneTables creates several ????? tables that are not visible to the add-on developer in the game's version 100026 API functions.
-* A Zone or Subzone Index is the ordinal position of an entry in a Zone or Subzone information, reference, or cross-reference table. Index values may change whenever the game's APIVersion changes. Indexes are often used to access specific Zone or Subzone maps when the game needs to place objects, markers, icons, and/or subdivisions (i.e. zones, subzones, etc.) at x,y location coordinates. "zoneIndex" is the variable name ZoneTables uses most often and the name is often shortened to "inx" or "zdx".
-* A Zone or Subzone Identifier is the ordinal position of an entry in a Zone or Subzone information, reference, or cross-reference table. Identifier values do not change whenever the game's APIVersion changes. Identifiers are often used to access specific Zone or Subzone maps when the game needs to define content like textures, icons, widgets, or .dds files to enable the graphics engine to "draw" them on your monitor (See [Texture List](https://wiki.esoui.com/Texture_List) in the ESOUI wiki). "zoneId" is the variable name ZoneTables uses most often and the name is often shortened to "id" or "zid".
+ZoneTables determines when to create its reference tables or when to reload an existing set of reference tables based on these criteria; if a Saved Variables file (i.e. .../SavedVariables/LibMaps.lua) exists that contains ZoneTables reference and/or cross-reference tables information for this NA, EU, or PTS megaserver, then the tables in that Saved Variables file will be used unless...
+1. The value returned from the GetAPIVersion() API function is not equal to the APIVersion value in the Saved Variables file; then, ZoneTables will create a new set of reference and/or cross-reference tables for every Zone index the game returns to it.
+2. The addonVersion value in the ZoneTables control entry (See the [AddonStub](https://github.com/Drakanwulf/AddonStub/wiki) wiki) is greater than the AddOnVersion value in the Saved Variables file; then, ZoneTables will create a new set of reference and/or cross-reference tables for every Zone index the game returns to it.
+3. The value returned from the GetNumMaps() API function is not equal to the numMaps value in the Saved Variables file; then, ZoneTables will create a new set of reference and/or cross-reference tables for every Zone index the game returns to it.
+4. Any reference or cross-reference table in the Saved Variables file is missing or is empty; then, ZoneTables will create a new set of reference and/or cross-reference tables for every Zone index the game returns to it.
 
-Although Zone Indexes and Zone Identifiers may appear to be interchangeable, they are not because their value, purpose and usage differ and because they reference different tables for different reasons; however, what indexes and identifiers have in common, for example, is where the Zone Index (?) for the Tamriel zone refers to map data points, the Zone Identifer (??) for the Tamriel zone refers to the textures, icons, and .dds files for the Tamriel map. Think of it this way: identifiers reference tables that tell the game "what to draw"; indexes reference tables that tell the game "where to draw" them.
-
-ZoneTables determines when to create its reference tables or when to update an existing set of reference tables based on these criteria; if a Saved Variables file (i.e. .../SavedVariables/LibMaps.lua) exists that contains ZoneTables reference and/or cross-reference tables information for this NA, EU, or PTS megaserver, then the tables in that Saved Variables file will be used unless...
-1. The value returned from the GetAPIVersion() API function is not equal to the APIVersion value in the Saved Variables file; then, ZoneTables will create a new set of reference and/or cross-reference tables for every Map index the game returns to it.
-2. The addonVersion value in the ZoneTables control entry (See the [AddonStub](https://github.com/Drakanwulf/AddonStub/wiki) wiki) is greater than the AddOnVersion value in the Saved Variables file; then, ZoneTables will create a new set of reference and/or cross-reference tables for every Map index the game returns to it.
-3. The value returned from the GetNumMaps() API function is not equal to the numMaps value in the Saved Variables file; then, ZoneTables will create a new set of reference and/or cross-reference tables for every Map index the game returns to it.
-4. Any reference or cross-reference table in the Saved Variables file is missing or is empty; then, ZoneTables will create a new set of reference and/or cross-reference tables for every Map index the game returns to it.
-
-ZoneTables uses game API functions to automatically create and maintain reference and/or cross-reference tables for each and every Map in the game:
-* It creates new or updates existing reference table entries by iterating through every Map index (e.g. 1 (Tamriel) through the current maximum number of Maps in the game (See the game GetNumMaps() API function).
-* It creates new or updates existing reference tables for which the game API functions return information that the ZoneTables API functions require.
-* It creates Information and Location reference tables for every Map.
-* It creates Map Name to Map Index reference tables.
-* It creates a Map Index to Zone Identifier cross-reference table.
-* It creates Map Identifier to Map Name and Map Name to Map Identifier reference tables that the game API does not provide currently (as of 100026).
-* It creates Map Index to Map Identifier and Map Identifier to Map Index cross-reference tables that the game does not provide currently (as of 100026).
+ZoneTables uses game API functions to automatically create and maintain reference and/or cross-reference tables for each and every Zone in the game:
+* It creates Zone Identifier to to Map name, and Map identifier reference tables which the game does not currently provide (as of 100027). 
+* It creates new or updates existing reference tables by iterating through every Zone Index until it finds a nil entry in the game's Zone Indexes table. Zone Indexes appear to be loaded in contiguous order, 1 through 'n'. It saves this count.
+* It creates new or updates existing reference tables by iterating through every Zone Identifier until it finds a nil entry in the game's Zone Identifiers table and its number of found entries equals (or betters) the number of entries in the game's Zone Indexes table. Zone Identifiers appear to be loaded with gaps in their numbering order (i.e. as sparse indexes). Whether this leaves nil gaps in the Zone Identifiers table entries is not known at this time.
+* It creates new or updates existing Point of Information and Zone Location reference tables for every Zone.
+* It creates new or updates existing reference tables to identify and segregate Zone Parents from their respective Children.
+* It creates new or updates existing reference tables containing Zone and/or POI information that the ZoneTables API functions require.
 ## What It Needs
-* ZoneTables uses the AddonStub support add-on to return an existing (i.e. duplicate) control entry or to create a control entry on ZoneTables' behalf.  Because ZoneTables is a standalone support add-on, its default actions have been coded to fail all older or duplicate versions of itself so these duplicates cannot continue to execute.
-* ZoneTables needs the LibGPS2 library add-on and its dependent library add-ons (e.g. LibStub, LibMapPing, LibAddOnMenu-2.0, etc.) to generate and return global x, y location coordinates for the top left corner of each map according to its relative position within (or outside of) the Tamriel map.
+* ZoneTables needs the LibGPS2 library add-on and its dependent library add-ons (e.g. LibStub, LibMapPing, LibAddOnMenu-2.0, etc.) to generate and return global x, y location coordinates for the top left corner of each Zone according to its relative position within (or outside of) the Tamriel map.
+
+ZoneTables does not duplicate existing game API functions like:
+	* GetUnitWorldPosition(*string* _unitTag_)
+	* GetUnitZoneIndex(*string* _unitTag_)
+
+* Game API functions that use Zone Indexes
+	* GetZoneDescription(*luaindex* _zoneIndex_)
+	* GetZoneId(*luaindex* _zoneIndex_)
+	* GetZoneNameByIndex(*luaindex* _zoneIndex_)
+
+* Game API functions that use Zone Identifiers
+	* GetMapIndexByZoneId(*integer* _zoneId_)
+	* GetParentZoneId(*integer* _zoneId_)
+	* GetZoneDescriptionById(*integer* _zoneId_)
+	* GetZoneIndex(*integer* _zoneId_)
+	* GetZoneNameById(*integer* _zoneId_)
+
+* Game API functions for retrieving identifiers, indexes, names, etc. from the current Zone
+	* GetCurrentMapZoneIndex()
+	* GetCurrentSubZonePOIIndices()
+	* GetPlayerActiveSubzoneName()
+
+* Game API functions that use Point Of Interest (POI) Indexes
+	* GetNumPOIs(*luaindex* _zoneIndex_)
+	* GetPOIInfo(*luaindex* _zoneIndex_, *luaindex* _poiIndex_)
+	* GetPOIType(*luaindex* _zoneIndex_, *luaindex* _poiIndex_)
+	* GetPOIMapInfo(*luaindex* _zoneIndex_, *luaindex* _poiIndex_)
+
+h5. MapDisplayPinType
+* MAP_PIN_TYPE_QUEST_COMPLETE
+* MAP_PIN_TYPE_QUEST_CONDITION
+* MAP_PIN_TYPE_QUEST_ENDING
+* MAP_PIN_TYPE_QUEST_GIVE_ITEM
+* MAP_PIN_TYPE_QUEST_INTERACT
+* MAP_PIN_TYPE_QUEST_OFFER
+* MAP_PIN_TYPE_QUEST_OFFER_REPEATABLE
+* MAP_PIN_TYPE_QUEST_OFFER_ZONE_STORY
+* MAP_PIN_TYPE_QUEST_OPTIONAL_CONDITION
+* MAP_PIN_TYPE_QUEST_PING
+* MAP_PIN_TYPE_QUEST_REPEATABLE_CONDITION
+* MAP_PIN_TYPE_QUEST_REPEATABLE_ENDING
+* MAP_PIN_TYPE_QUEST_REPEATABLE_OPTIONAL_CONDITION
+* MAP_PIN_TYPE_QUEST_TALK_TO
+* MAP_PIN_TYPE_QUEST_ZONE_STORY_CONDITION
+* MAP_PIN_TYPE_QUEST_ZONE_STORY_ENDING
+* MAP_PIN_TYPE_QUEST_ZONE_STORY_OPTIONAL_CONDITION
+
+h5. PointOfInterestType
+* POI_TYPE_ACHIEVEMENT
+* POI_TYPE_ACHIEVEMENT_COMPONENT
+* POI_TYPE_GROUP_DUNGEON
+* POI_TYPE_HOUSE
+* POI_TYPE_OBJECTIVE
+* POI_TYPE_PUBLIC_DUNGEON
+* POI_TYPE_STANDARD
+* POI_TYPE_WAYSHRINE
+
+h5. UIMapType
+* MAPTYPE_COSMIC
+* MAPTYPE_DEPRECATED_1
+* MAPTYPE_NONE
+* MAPTYPE_SUBZONE
+* MAPTYPE_WORLD
+* MAPTYPE_ZONE
+
+* EVENT_ZONE_CHANGED (*string* _zoneName_, *string* _subZoneName_, *bool* _newSubzone_, *integer* _zoneId_, *integer* _subZoneId_)
+
 ## History:
 ZoneTables has no ancestors. It is the result of our examining hard coded table data and the cooperation and assistance we received from other add-on authors who support the game. We would like to take this opportunity to thank them for their kindness and their efforts to assist us.
+
 ## API Functions:
-ZoneTables does not duplicate existing game API functions like:
-* Game API functions that use Map Indexes
-    * GetCyrodiilMapIndex()
-    * GetImperialCityMapIndex()
-    * GetMapNameByIndex(*luaindex* _mapIndex_)
-    * GetAutoMapNavigationCommonZoomOutMapIndex()
-    * SetMapToMapListIndex(*luaindex* _index_) 
-* Game API functions that use Map Identifiers
-    * GetMapNumTilesForMapId(*integer* _mapId_)
-    * GetMapTileTextureForMapId(*integer* _mapId_, *luaindex* _tileIndex_)
-* Game API functions for retrieving Map identifiers, indexes, and names from the current Map
-    * GetCurrentMapId()
-    * GetCurrentMapIndex()
-    * GetMapName()
+Because the game handles the "Tamriel" and "The Aurbis" maps differently than it does other maps, I believe you will find that neither Zone identifiers nor indexes for the "Tamriel" and "The Aurbis" zones exist because the equivalent Zones for these two Maps either do not exist in the game or their identifier and index values have not been made visible.
 
-ZoneTables uses the SetMapToMapListIndex(*luaindex* _index_) game API function to iterate through the game's list of active Maps.
-
-Because the game handles the "Tamriel" and "The Aurbis" maps differently than it does other maps, it is possible for the ZoneTables API functions to return nil or zero (0) values because the corresponding Map values do not exist or they default to zero (invalid) values; however, please remember that 0,0 are valid defaults for the x,y location GPS coordinates of the top left corner of any Map. For those reasons, I believe you will find that some cross-reference tables are missing entries for indexes (1) and (24) (i.e. the Maps indexes for the "Tamriel" and "The Aurbis" maps).
-### Definitions:
-* MAJOR := Contains "ZoneTables", the addonName of this add-on enclosed in quotation marks.
-* MINOR := Contains the AddOnVersion number for this add-on. _Note: This number must exist in the add-on code and it must be the same as the number in the AddOnVersion: directive in the manifest file; otherwise, the AddonStub support add-on will fail all attempts to start up a process for the ZoneTables add-on.
-### ZoneTables:GetContentType( mapIndex: number )
-#### Description:
-Get the content type for this map. Content type defines what is in the Map.
-#### Input:
-mapIndex := A positive number between 1 and numMaps (the maximum number of Maps in the World)
-#### Returns:
-nil := No values to return.
-
-contentType := an index into a CONSTANTS table of Map Content definitions.
-### ZoneTables:GetCoord( mapIndex: number )
-#### Description:
-Get the global x,y coordinates for this Map
-#### Input:
-mapIndex := A positive number between 1 and numMaps (the maximum number of Maps in the World)
-#### Returns:
-nil := No values to return.
-
-number, number := The global x,y location coordinates of the top left corner of this Map's position inside (or outside) of the Tamriel map.
-### ZoneTables:GetIdByIndex( mapIndex: number )
-#### Description:
-Get the Map Identifier for this Map Index
-#### Input:
-mapIndex := A positive number between 1 and numMaps (the maximum number of Maps in the World)
-#### Returns:
-nil := No values to return.
-
-mapId := A positive number whose values range between 1 and ?. There appears to be no visible maximum value for MapId.
-### ZoneTables:GetIdByName( mapName: string )
-#### Description:
-Get the Map Identifier for this Map Name
-#### Input:
-mapName := A string composed of case sensitive letters, numbers, and apostrophe characters (').
-#### Returns:
-nil := No values to return.
-
-mapId := A positive number whose values range between 1 and ?. There appears to be no visible maximum value for MapId.
-### ZoneTables:GetIndexByName( mapName: string )
-#### Description:
-Get the Map Index for this Map Name
-#### Input:
-mapName := A string composed of case sensitive letters, numbers, and apostrophe characters (').
-#### Returns:
-nil := No values to return.
-
-mapIndex := A positive number between 1 and numMaps (the maximum number of Maps in the World)
-### ZoneTables:GetIndexById( mapId: number )
-#### Description:
-Get the Map Index for this Map Identifier
-#### Input:
-mapId := A positive number whose values range between 1 and ?. There appears to be no visible maximum value for MapId.
-#### Returns:
-nil := No values to return.
-
-mapIndex := A positive number between 1 and numMaps (the maximum number of Maps in the World)
-### ZoneTables:GetMapType( mapIndex: number )
-#### Description:
-Get the map type for this Map. A map type is how you verify that a game table entry is a Map, a Zone, a Subzone, or something else.
-#### Input:
-mapIndex := A positive number between 1 and numMaps (the maximum number of Maps in the World)
-#### Returns:
-nil := No values to return.
-
-mapType := a numerical index into a CONSTANTS table that defines the type of map.
-### ZoneTables:GetNameById( mapId: number )
-#### Description:
-Get the Map Name for this Map Identifier
-#### Input:
-mapId := A positive number whose values range between 1 and ?. There appears to be no visible maximum value for MapId.
-#### Returns:
-nil := No values to return.
-
-mapName := A string composed of case sensitive letters, numbers, and apostrophe characters (').
-### ZoneTables:GetZoneId( mapIndex: number )
-#### Description:
-Get the equivalent Zone Identifier for this Map
-#### Input:
-mapIndex := A positive number between 1 and numMaps (the maximum number of Maps in the World)
-#### Returns:
-nil := No values to return.
-
-zoneId := A positive number whose values range between 1 and ?. There appears to be no visible maximum value for zoneId.
 ## Examples
-This code snippet illustrates the interactions between ZoneTables, AddonStub, and the resultant ZoneTables error messages.
+This code snippet illustrates how ZoneTables processes valid start up attempts and fails all duplicate start up attempts because trapping them is one way to determine who was doing what and when, which should give us the why.
 ```
---[[--------------------------------------------------------------------------------------------------------------------------------
-Same variables for AddonStub as for LibStub except MINOR must match the AddOnVersion number in the manifest.
-----------------------------------------------------------------------------------------------------------------------------------]]
-local MAJOR, MINOR = "ZoneTables", 100
+--[[----------------------------------------------------------------------------------------------------------------------
+Local variables shared by multiple functions within this add-on.
+------------------------------------------------------------------------------------------------------------------------]]
+local ADDON_NAME = "ZoneTables"
+local addon = {}						-- Every add-on control entry begins as an empty table
 
---[[--------------------------------------------------------------------------------------------------------------------------------
-Bootstrap code to either load or update this add-on.
-----------------------------------------------------------------------------------------------------------------------------------]]
-local addon, version
-addon, version = AddonStub:Get( MAJOR )
-if addon then
-	assert( version < MINOR, "ZoneTables: This add-on is already loaded. Do NOT load ZoneTables multiple times!" )
-end
+--[[----------------------------------------------------------------------------------------------------------------------
+Bootstrap code to either load or fail this add-on.
+------------------------------------------------------------------------------------------------------------------------]]
+assert( not _G[ADDON_NAME], ADDON_NAME.. ": is already loaded. Do NOT load add-ons multiple times!" )
 
-addon, version = AddonStub:New( MAJOR, MINOR )
-assert( addon, "ZoneTables: AddonStub failed to create a control entry!" )
---[[--------------------------------------------------------------------------------------------------------------------------------
-... And ZoneTables initialization continues on from here...
-----------------------------------------------------------------------------------------------------------------------------------]]
+_G[ADDON_NAME] = addon
+assert( _G[ADDON_NAME], ADDON_NAME.. ". The game failed to create a global control entry!" )
+
+--[[----------------------------------------------------------------------------------------------------------------------
+... And add-on initialization continues on from here...
+------------------------------------------------------------------------------------------------------------------------]]
 ```
 These code snippets illustrate the interactions between ZoneTables, LibStub(r5), LibGPS2, and the resultant ZoneTables error messages.
 ```
---[[--------------------------------------------------------------------------------------------------------------------------------
+--[[-------------------------------------------------------------------------------------------------------------------------------
 Obtain a local link to "LibGPS2" and define a measurements table for its use.
 ----------------------------------------------------------------------------------------------------------------------------------]]
 local GPS = LibStub:GetLibrary( "LibGPS2", SILENT )
@@ -206,11 +225,11 @@ local measurement = {
 }
 ```
 ```
-	-- Wait for a player to become active; LibGPS2 needs this
-	EVENT_MANAGER:RegisterForEvent( MAJOR, EVENT_PLAYER_ACTIVATED,
-		function( event, initial )
-			EVENT_MANAGER:UnregisterForEvent( MAJOR, EVENT_PLAYER_ACTIVATED )
-		end
-	)
-	assert( GPS:IsReady(), "ZoneTables: LibGPS2 cannot function until a player is active!" )
+-- Wait for a player to become active; LibGPS2 needs this
+EVENT_MANAGER:RegisterForEvent( MAJOR, EVENT_PLAYER_ACTIVATED,
+	function( event, initial )
+		EVENT_MANAGER:UnregisterForEvent( MAJOR, EVENT_PLAYER_ACTIVATED )
+	end
+)
+assert( GPS:IsReady(), "ZoneTables: LibGPS2 cannot function until a player is active!" )
 ```
